@@ -38,9 +38,7 @@ def arrows():
             # plt.show()
 
 
-def plot(angles, name):
-    # compute the circular standard deviation
-    std = scipy.stats.circstd(angles)
+def plot(angles, name, std):
     width = 1
 
     # plot the results
@@ -52,7 +50,7 @@ def plot(angles, name):
     plt.ylabel('probability density')
 
     plt.legend()
-    plt.title(name)
+    plt.title(name + f' $\sigma = {std:.3f}$')
 
     plt.savefig(hist_folder + f'{name}.png')
     plt.show()
@@ -66,8 +64,8 @@ def plot(angles, name):
     plt.xlabel('direction angle in degrees')
 
     angle = np.deg2rad(67.5)
-    plt.legend(loc='upper left', bbox_to_anchor=(.55 + np.cos(angle)/2, .65 + np.sin(angle)/2))
-    plt.title(name)
+    plt.legend(loc='upper left', bbox_to_anchor=(.55 + np.cos(angle)/2, .63 + np.sin(angle)/2))
+    plt.title(name + f' $\sigma = {std:.3f}$')
 
     plt.savefig(hist_folder + f'{name}_polar.png')
     plt.show()
@@ -97,8 +95,12 @@ def angles():
 
             angles += new_angles
 
+        # compute the circular standard deviation
+        std = scipy.stats.circstd(angles)
+
+        # plot the results
         name = experiment['runs'][0]['img'].split('__', 1)[0]
-        plot(angles, name)
+        plot(angles, name, std)
 
 
 if __name__ == '__main__':
