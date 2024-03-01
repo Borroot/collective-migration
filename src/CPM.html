@@ -100,6 +100,7 @@
 
 		let sim, meter
 		let gridsize = 3
+		let ssid = 0
 
 		function initialize() {
 			sim = new CPM.Simulation(config, { initializeGrid: initializeGrid })
@@ -216,40 +217,120 @@
 			return [wrapped, centroids]
 		}
 
-		async function capture() {
-			const P = sim.Cim.C.conf.P[1]
-			const J = sim.Cim.C.conf.J[2][1]
-			const name = `G${gridsize}_P${P}_J${J}`
+		function download(filename, text) {
+			// download the results
+			let a = document.createElement('a')
+			a.href = "data:application/octet-stream," + encodeURIComponent(text)
+			a.download = filename
+			a.click()
+		}
+
+		async function run_experiment(S, G, P, J, N) {
+			// set parameters
+			gridsize = G     // gridsize for the walls
+			sim.Cim.C.conf.P[1] = P  // perimeter
+			sim.Cim.C.conf.J[1][2] = sim.Cim.C.conf.J[2][1] = J  // adhesion
+
+			// start the experimental run with the given parameters
+			// reset the grid
+			killAllCells()
+			seedCells(N)
+
+			// let the experiment run for the specified number of seconds
+			await new Promise(r => setTimeout(r, S * 1000)) // sleep
+
+			// capture the results
+			return await capture(G, P, J, N)
+		}
+
+		async function run_experiments() {
+			let results = []
+			let images = []
+
+			// set global parameters
+			const S = 10         // running time per experiment
+			const R = 2          // number of repeats per experiment
+			sim.imgrate = 10     // increase framerate
+
+			// define all the experiments
+			const setups = [
+			//   G    P   J   N
+				[2, 300, 20, 30],
+				[3, 350, 20, 50],
+			]
+
+			// run all the experiments
+			for (let i = 0; i < setups.length; i++) {
+				let [G, P, J, N] = setups[i]
+				const name = `G${G}_P${P}_J${J}_N${N}`
+				results.push({
+					G: G,
+					P: P,
+					J: J,
+					N: N,
+					runs: []
+				})
+
+				// do multiple runs of this experiment
+				for (let i = 0; i < R; i++) {
+					console.log(`Running ${name} for ${S} seconds...`)
+					let [result, img] = await run_experiment(S, ...setups[i])
+					results[results.length - 1].runs.push(result)
+					images.push(img)
+				}
+			}
+
+			// download the results of all the experiments
+			download('results.json', JSON.stringify(results))
+
+			// download all the images
+			for (let i = 0; i < images.length; i++)
+				images[i].click()
+		}
+
+		async function capture(G, P, J, N) {
+			const name = `G${G}_P${P}_J${J}_N${N}`
 
 			// capture the canvas
 			let canvas = document.getElementsByTagName('canvas').item(0)
-			let a = document.createElement('a')
-			a.download = `${name}.png`
-			a.href = canvas.toDataURL()
+			let img = document.createElement('a')
+			img.download = `${name}__${++ssid}.png`
+			img.href = canvas.toDataURL()
 
 			// write the centroid data
+			console.log(`Collecting results for ${name}...`)
 			const [wrapped1, centroids1] = compute_centroid_data(false)
 			await new Promise(r => setTimeout(r, 3000)) // sleep
 			const [wrapped2, centroids2] = compute_centroid_data(false)
 
-			let text = ''
+			let results = {
+				img: img.download,
+				xy: [],
+				dxy: []
+			}
+			// let text = ''
+
 			for (let [cell_id, [x2, y2]] of centroids2) {
+				// check if the centroid of a cell is present both before and after
 				if (wrapped1.has(cell_id)
 					&& wrapped1.get(cell_id).every(e => e === false)
 					&& wrapped2.get(cell_id).every(e => e === false)
 				) {
 					let [x1, y1] = centroids1.get(cell_id)
-					text += `${x1},${y1},${x2 - x1},${y2 - y1}\n`
+					let dx = x2 - x1
+					let dy = y2 - y1
+
+					// text += `${x1},${y1},${dx},${dy}\n`
+
+					results['xy'].push([x1, y1])
+					results['dxy'].push([dx, dy])
 				}
 			}
 
-			a.click()
+			// img.click()
+			// download(`${name}.txt`, text)
 
-			let b = document.createElement('a')
-			b.href = "data:application/octet-stream," + encodeURIComponent(text)
-			b.download = `${name}.txt`
-
-			b.click()
+			return [results, img]
 		}
 
 		/* The following custom methods are used for control buttons on the html page. */
