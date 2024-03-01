@@ -183,7 +183,12 @@
 			return centroids
 		}
 
-		function draw_centroids(wrapped, centroids) {
+		function compute_walls(cell_ids) {
+			cell_ids.sort((a, b) => a - b)
+			return cell_ids.slice(0, gridsize * gridsize)
+		}
+
+		function draw_centroids(wrapped, centroids, walls) {
 
 			const canvas = document.getElementsByTagName("canvas").item(0)
 			const ctx = canvas.getContext('2d')
@@ -197,6 +202,8 @@
 
 				if (wrapped.get(cell_id).includes(true))
 					ctx.fillStyle = 'red'
+				else if (walls.includes(cell_id))
+					ctx.fillStyle = 'green'
 				else
 					ctx.fillStyle = 'blue'
 
@@ -208,13 +215,14 @@
 			const pixels = Array.from(sim.Cim.grid.pixels())
 			const cell_ids = [...new Set(pixels.map(x => x[1]))]
 
+			const walls = compute_walls(cell_ids)
 			const wrapped = compute_wrapped(cell_ids, pixels)
 			const centroids = compute_centroids(cell_ids, pixels, wrapped)
 
 			if (draw)
-				draw_centroids(wrapped, centroids)
+				draw_centroids(wrapped, centroids, walls)
 
-			return [wrapped, centroids]
+			return [wrapped, centroids, walls]
 		}
 
 		function download(filename, text) {
@@ -248,15 +256,15 @@
 			let images = []
 
 			// set global parameters
-			const S = 10         // running time per experiment
-			const R = 2          // number of repeats per experiment
+			const S = 30         // running time per experiment
+			const R = 10         // number of repeats per experiment
 			sim.imgrate = 10     // increase framerate
 
 			// define all the experiments
 			const setups = [
 			//   G    P   J   N
-				[2, 300, 20, 30],
-				[3, 350, 20, 50],
+				// [2, 340, 20, 1],
+				[2, 340, 20, 100],
 			]
 
 			// run all the experiments
@@ -273,8 +281,8 @@
 
 				// do multiple runs of this experiment
 				for (let i = 0; i < R; i++) {
-					console.log(`Running ${name} for ${S} seconds...`)
-					let [result, img] = await run_experiment(S, ...setups[i])
+					console.log(`Running ${name} for ${S} seconds...  (${i+1}/${R})`)
+					let [result, img] = await run_experiment(S, G, P, J, N)
 					results[results.length - 1].runs.push(result)
 					images.push(img)
 				}
@@ -299,9 +307,9 @@
 
 			// write the centroid data
 			console.log(`Collecting results for ${name}...`)
-			const [wrapped1, centroids1] = compute_centroid_data(false)
+			const [wrapped1, centroids1, walls1] = compute_centroid_data(false)
 			await new Promise(r => setTimeout(r, 3000)) // sleep
-			const [wrapped2, centroids2] = compute_centroid_data(false)
+			const [wrapped2, centroids2, walls2] = compute_centroid_data(false)
 
 			let results = {
 				img: img.download,
@@ -313,6 +321,7 @@
 			for (let [cell_id, [x2, y2]] of centroids2) {
 				// check if the centroid of a cell is present both before and after
 				if (wrapped1.has(cell_id)
+					&& !walls1.includes(cell_id)
 					&& wrapped1.get(cell_id).every(e => e === false)
 					&& wrapped2.get(cell_id).every(e => e === false)
 				) {
