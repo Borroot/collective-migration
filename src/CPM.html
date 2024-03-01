@@ -233,7 +233,7 @@
 			a.click()
 		}
 
-		async function run_experiment(S, G, P, J, N) {
+		async function run_experiment(G, P, J, N, R, S) {
 			// set parameters
 			gridsize = G     // gridsize for the walls
 			sim.Cim.C.conf.P[1] = P  // perimeter
@@ -248,7 +248,7 @@
 			await new Promise(r => setTimeout(r, S * 1000)) // sleep
 
 			// capture the results
-			return await capture(G, P, J, N)
+			return await capture(G, P, J, N, R, S)
 		}
 
 		async function run_experiments() {
@@ -256,33 +256,54 @@
 			let images = []
 
 			// set global parameters
-			const S = 30         // running time per experiment
+			const S = 3 * 60     // running time per experiment
 			const R = 10         // number of repeats per experiment
 			sim.imgrate = 10     // increase framerate
 
 			// define all the experiments
 			const setups = [
-			//   G    P   J   N
-				// [2, 340, 20, 1],
+			//   G    P   J    N
+				[0, 340, 20, 100],
+				[1, 340, 20, 100],
 				[2, 340, 20, 100],
+				[3, 340, 20, 100],
+				[4, 340, 20, 100],
+				[5, 340, 20, 100],
+				[6, 340, 20, 100],
+
+				[0, 340, 20, 80],
+				[1, 340, 20, 80],
+				[2, 340, 20, 80],
+				[3, 340, 20, 80],
+				[4, 340, 20, 80],
+				[5, 340, 20, 80],
+				[6, 340, 20, 80],
+
+				[3, 290, 20, 100],
+				[3, 400, 20, 100],
+
+				[3, 340, 0, 100],
+				[3, 340, 100, 100],
 			]
 
 			// run all the experiments
 			for (let i = 0; i < setups.length; i++) {
 				let [G, P, J, N] = setups[i]
-				const name = `G${G}_P${P}_J${J}_N${N}`
+				const name = `G${G}_P${P}_J${J}_N${N}_R${R}_S${S}`
 				results.push({
 					G: G,
 					P: P,
 					J: J,
 					N: N,
+					R: R,
+					S: S,
 					runs: []
 				})
 
 				// do multiple runs of this experiment
 				for (let i = 0; i < R; i++) {
 					console.log(`Running ${name} for ${S} seconds...  (${i+1}/${R})`)
-					let [result, img] = await run_experiment(S, G, P, J, N)
+					let [result, img] = await run_experiment(G, P, J, N, R, S)
 					results[results.length - 1].runs.push(result)
 					images.push(img)
 				}
@@ -296,8 +317,8 @@
 				images[i].click()
 		}
 
-		async function capture(G, P, J, N) {
-			const name = `G${G}_P${P}_J${J}_N${N}`
+		async function capture(G, P, J, N, R, S) {
+			const name = `G${G}_P${P}_J${J}_N${N}_R${R}_S${S}`
 
 			// capture the canvas
 			let canvas = document.getElementsByTagName('canvas').item(0)

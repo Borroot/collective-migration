@@ -36,6 +36,7 @@ def arrows():
 
             plt.savefig(out_folder + run['img'])
             # plt.show()
+            plt.clf()
 
 
 def plot(angles, name, std):
@@ -53,7 +54,8 @@ def plot(angles, name, std):
     plt.title(name + f' $\sigma = {std:.3f}$')
 
     plt.savefig(hist_folder + f'{name}.png')
-    plt.show()
+    # plt.show()
+    plt.clf()
 
     # plt the results polar
     ax = plt.subplot(projection='polar')
@@ -68,7 +70,8 @@ def plot(angles, name, std):
     plt.title(name + f' $\sigma = {std:.3f}$')
 
     plt.savefig(hist_folder + f'{name}_polar.png')
-    plt.show()
+    # plt.show()
+    plt.clf()
 
 
 def angles():
@@ -104,5 +107,5 @@ def angles():
 
 
 if __name__ == '__main__':
-    # arrows()
+    arrows()
     angles()
