@@ -12,3 +12,14 @@
 
 # Quantitive measures for CM
 - https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9604284/
+
+# Bugs
+- Fix image generation/download bug
+- Fix wrapped bug, see arrow images
+- Fix label in polar plots
+
+# Suggestions
+- Fix cutting at torus borders
+- Compute migration over time
+- 95% confidence for stds
+- Quantify magnitudes

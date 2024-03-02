@@ -17,7 +17,11 @@ def arrows():
     # construct the arrow images
     for experiment in results:
         for run in experiment['runs']:
-            img = plt.imread(in_folder + run['img'])
+            try:
+                img = plt.imread(in_folder + run['img'])
+            except:
+                print(in_folder + run['img'], 'not found')
+                continue
 
             plt.figure(figsize=(7, 7))
 
